@@ -33,6 +33,7 @@ version = write_version_py()
 
 # ninja build does not work unless include_dirs are abs path
 this_dir = os.path.dirname(os.path.abspath(__file__))
+build_cpu = False
 
 def get_cuda_bare_metal_version(cuda_dir):
     raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)
@@ -91,16 +92,18 @@ def check_cuda_torch_binary_vs_bare_metal(cuda_dir):
     print(raw_output + "from " + cuda_dir + "/bin\n")
 
     if (bare_metal_major != torch_binary_major) or (bare_metal_minor != torch_binary_minor):
-        raise RuntimeError("Cuda extensions are being compiled with a version of Cuda that does " +
+        print("Cuda extensions are being compiled with a version of Cuda that does " +
                            "not match the version used to compile Pytorch binaries.  " +
                            "Pytorch binaries were compiled with Cuda {}.\n".format(torch.version.cuda))
-
+        global build_cpu
+        build_cpu = True
 
 
 cmdclass['build_ext'] = BuildExtension
 
 if torch.utils.cpp_extension.CUDA_HOME is None:
-    raise RuntimeError("Nvcc was not found.  Are you sure your environment has nvcc available?  If you're installing within a container from https://hub.docker.com/r/pytorch/pytorch, only images whose names contain 'devel' will provide nvcc.")
+    print("Nvcc was not found.  Are you sure your environment has nvcc available?  If you're installing within a container from https://hub.docker.com/r/pytorch/pytorch, only images whose names contain 'devel' will provide nvcc.")
+    build_cpu = True
 
 check_cuda_torch_binary_vs_bare_metal(torch.utils.cpp_extension.CUDA_HOME)
 
@@ -201,6 +204,8 @@ ext_modules.append(
                                                 '--expt-relaxed-constexpr',
                                                 '--expt-extended-lambda'] + generator_flag}))
 
+if build_cpu:
+    ext_modules = []
 
 setup(
     name="unicore",
