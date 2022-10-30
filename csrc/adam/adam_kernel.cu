@@ -26,13 +26,13 @@ __global__ void adam_cuda_kernel(
     const float decay_size)
 {
     //Assuming 2D grids and 2D blocks
-    const int blockId = gridDim.x * blockIdx.y + blockIdx.x;
-    const int threadsPerBlock = blockDim.x * blockDim.y;
-    const int threadIdInBlock = threadIdx.y * blockDim.x + threadIdx.x;
-    const int i = (blockId * threadsPerBlock + threadIdInBlock);
-    const int totThreads = gridDim.x*gridDim.y*threadsPerBlock;
+    const size_t blockId = (size_t)gridDim.x * blockIdx.y + blockIdx.x;
+    const size_t threadsPerBlock = (size_t)blockDim.x * blockDim.y;
+    const size_t threadIdInBlock = (size_t)threadIdx.y * blockDim.x + threadIdx.x;
+    const size_t i = (blockId * threadsPerBlock + threadIdInBlock);
+    const size_t totThreads = gridDim.x*gridDim.y*threadsPerBlock;
 
-    for (int j = i; j < tsize; j+=totThreads) {
+    for (size_t j = i; j < tsize; j+=totThreads) {
         // weight decay
         T cur_p = (T)p[j] * decay_size;
         T scaled_grad = static_cast<T>(g[j]) / grad_scale;
@@ -62,7 +62,6 @@ void fused_adam_cuda(
     //Determine #threads and #blocks
     const int threadsPerBlock = 512;
     const dim3 blocks((tsize+threadsPerBlock-1)/threadsPerBlock);
-    AT_ASSERTM(at::cuda::detail::canUse32BitIndexMath(p), "parameter tensor is too large to be indexed with int32");
     //Constants
     float step_size = lr;
     if (bias_correction == 1) {
