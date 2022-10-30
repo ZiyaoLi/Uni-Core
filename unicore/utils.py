@@ -92,13 +92,7 @@ def multi_tensor_total_norm(grads, chunk_size=2048 * 32) -> torch.Tensor:
     for device in per_device_grads.keys():
         for dtype in per_device_grads[device].keys():
             cur_grads = per_device_grads[device][dtype]
-            if HAS_MULTI_TENSOR and device.type == "cuda":
-                norm = unicore_fused_multi_tensor.l2norm(
-                    chunk_size, [cur_grads]
-                )
-                norms.append(norm)
-            else:
-                norms += [torch.norm(g, p=2, dtype=torch.float32) for g in cur_grads]
+            norms += [torch.norm(g, p=2, dtype=torch.float32) for g in cur_grads]
     total_norm = torch.norm(torch.stack(norms), p=2, dtype=torch.float32)
     return total_norm
 
