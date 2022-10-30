@@ -58,9 +58,9 @@ void fused_adam_cuda(
     float decay)
 {
     //Get tensor size
-    int tsize = p.numel();
+    size_t tsize = p.numel();
     //Determine #threads and #blocks
-    const int threadsPerBlock = 512;
+    const size_t threadsPerBlock = 512;
     const dim3 blocks((tsize+threadsPerBlock-1)/threadsPerBlock);
     //Constants
     float step_size = lr;
